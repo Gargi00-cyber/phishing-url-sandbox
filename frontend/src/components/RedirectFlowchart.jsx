@@ -21,7 +21,9 @@ function buildFlow(hops) {
           {i === 0 ? 'Start' : i === hops.length - 1 ? 'Final Page' : `Hop ${i}`}
         </p>
         <p className="text-[11px] text-slate-300 truncate max-w-[200px]">{hop.url}</p>
-        <p className="text-[10px] text-pink-300 mt-1 max-w-[200px]">{hop.riskNote}</p>
+       <p className="text-[10px] text-pink-300 mt-1 max-w-[200px]">
+          {hop.status_code ? `HTTP ${hop.status_code}` : hop.riskNote}
+        </p>
       </div>
     )},
     style: {

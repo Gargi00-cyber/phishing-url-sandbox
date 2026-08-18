@@ -1,46 +1,73 @@
+import { useState, useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import RiskScoreCard from '../components/RiskScoreCard'
 import ScreenshotViewer from '../components/ScreenshotViewer'
 import RiskCharts from '../components/RiskCharts'
 import RedirectFlowchart from '../components/RedirectFlowchart'
+import LoadingScanner from '../components/LoadingScanner'
 import Layout from '../components/Layout'
+import { submitScan } from '../api/scanApi'
 
 function Results() {
-  const { scanId } = useParams()
+  useParams()
   const location = useLocation()
-  const url = location.state?.url || 'unknown URL'
+  const url = location.state?.url || ''
 
-  const dummyScore = 72
-  const dummyFinalUrl = 'http://fake-login-page-example.test/account/verify'
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const dummyRiskBreakdown = [
-    { name: 'Domain Age', value: 35 },
-    { name: 'Redirect Count', value: 25 },
-    { name: 'Suspicious Keywords', value: 20 },
-    { name: 'SSL/Cert Issues', value: 20 },
-  ]
+  useEffect(() => {
+    if (!url) {
+      setError('No URL was provided to scan.')
+      setLoading(false)
+      return
+    }
 
-  const dummyComparisonData = [
-    { name: 'Domain Age (days)', thisScan: 12, typical: 900 },
-    { name: 'Redirects', thisScan: 6, typical: 1 },
-    { name: 'Ext. Scripts', thisScan: 14, typical: 4 },
-  ]
+    let cancelled = false
 
-  const dummyHops = [
-    { url: url, riskNote: 'Original submitted link' },
-    { url: 'http://bit.ly/3xY9zLp', riskNote: 'URL shortener - hides real destination' },
-    { url: 'http://secure-verify-acc0unt.tk', riskNote: 'Domain registered 3 days ago' },
-    { url: dummyFinalUrl, riskNote: 'Final phishing landing page' },
-  ]
+    async function runScan() {
+      try {
+        const data = await submitScan(url)
+        if (!cancelled) setResult(data)
+      } catch (err) {
+        if (!cancelled) {
+          const detail = err.response?.data?.detail || 'The scan failed. Please try again.'
+          setError(detail)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    runScan()
+    return () => { cancelled = true }
+  }, [url])
 
   return (
     <Layout>
       <div className="flex flex-col items-center gap-8 px-4 py-8 w-full">
         <h1 className="text-3xl font-bold text-white">Scan Results</h1>
-        <RiskScoreCard score={dummyScore} url={url} />
-        <ScreenshotViewer imageUrl={null} finalUrl={dummyFinalUrl} />
-        <RiskCharts riskBreakdown={dummyRiskBreakdown} comparisonData={dummyComparisonData} />
-        <RedirectFlowchart hops={dummyHops} />
+
+        {loading && <LoadingScanner url={url} />}
+
+        {!loading && error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 max-w-xl text-center">
+            <p className="text-red-300 font-medium">{error}</p>
+          </div>
+        )}
+
+        {!loading && result && (
+          <>
+            <RiskScoreCard score={result.risk_score} url={result.submitted_url} />
+            <ScreenshotViewer
+              imageUrl={`data:image/png;base64,${result.screenshot_base64}`}
+              finalUrl={result.final_url}
+            />
+            <RiskCharts breakdown={result.risk_breakdown} />
+            <RedirectFlowchart hops={result.hops} />
+          </>
+        )}
       </div>
     </Layout>
   )

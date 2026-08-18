@@ -9,9 +9,8 @@ redis_client = Redis(
     token=os.getenv("UPSTASH_REDIS_REST_TOKEN"),
 ) 
 
-SCAN_LIMIT = 5           # max scans allowed
-WINDOW_SECONDS = 3600    # per this many seconds (1 hour)
-
+SCAN_LIMIT = int(os.getenv("SCAN_LIMIT", "5"))
+WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "3600"))
 
 class RateLimitExceeded(Exception):
     def __init__(self, retry_after: int):
