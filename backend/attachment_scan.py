@@ -9,7 +9,7 @@ VT_API_KEY = os.getenv("VIRUSTOTAL_API_KEY")
 HA_API_KEY = os.getenv("HYBRID_ANALYSIS_API_KEY")
 
 VT_BASE = "https://www.virustotal.com/api/v3"
-HA_BASE = "https://www.hybrid-analysis.com/api/v2"
+HA_BASE = "https://hybrid-analysis.com/api/v2"
 
 MAX_FILE_SIZE = 32 * 1024 * 1024  # 32MB, VirusTotal's simple-upload limit
 
